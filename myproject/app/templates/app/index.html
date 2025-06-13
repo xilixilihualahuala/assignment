@@ -1,0 +1,137 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<!-- Important Information Section -->
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-info-circle"></i> Important System Information</h3>
+        </div>
+        <div class="card-body">
+            <!-- Account Registration -->
+            <div class="alert alert-primary" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-user-plus"></i> Account Registration</h4>
+                <p>During registration, you must generate and submit your RSA public key. Keep your private key secure as it will be needed for login and assignment submissions.</p>
+                <ul>
+                    <li class="mb-3">Generate your RSA key pair using these commands (replace placeholders with your actual filenames):
+                        <pre class="bg-light p-2 mt-2"><code>openssl genrsa -out &lt;private_key_file&gt;.pem 2048
+openssl rsa -in &lt;private_key_file&gt;.pem -pubout -out &lt;public_key_file&gt;.pem</code></pre>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Account Registration -->
+            <div class="alert alert-info" role="alert">
+                <h4 class="mt-3"><i class="fas fa-lock"></i> Password Requirements</h4>
+                <div class="bg-light p-3 rounded mb-3">
+                    <p class="mb-2">Your password must meet all of the following criteria:</p>
+                    <ul>
+                        <li>Minimum length of 10 characters</li>
+                        <li>Must contain at least one uppercase letter (A-Z)</li>
+                        <li>Must contain at least one lowercase letter (a-z)</li>
+                        <li>Must contain at least one number (0-9)</li>
+                        <li>Must contain at least one special character (!@#$%^&*, etc.)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Login Requirements -->
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-sign-in-alt"></i> Login Requirements</h4>
+                <p>For each login, you need to:</p>
+                <ol>
+                    <li>Encrypt your password using the admin's public key: (Please ensure the admin public key file must include the complete header and footer:)
+                        <pre class="bg-light p-2 mt-2"><code>-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtePlELWwV2MmzR4CFJTQ
+6o02w9asKYSsSyKEnCh8YVX9hRdeQXkJ/pIZ8LMegoojkMRilyZ5NAUDATI6DvHV
+xEasmYhTktjKiELrcZUnWvYL6Q6Off4nmKBgWQ7Rj1lM2WXETrfW1Z8a+t24YNRa
+fgMg77zbw882SifAUJFvhue6jv191ACkqHRsspKi/7kCYcQY73nLg/cBJkoUCFJk
++o9RpNB0ZSJmnoqfWlMwxXubxFAH0+P5Ru80bKThqDNBrHFRAajOe92EsmIYMQja
+eYE08HIGlS0ItBSMfvSUXTDwiQ1GbIoMJnw+Zk/2seekVE9Lvzj0HJfF+lZn4peF
++wIDAQAB
+-----END PUBLIC KEY-----</code></pre>
+                    </li>
+                    <li>Generate the encrypted password and signature:
+                        <pre class="bg-light p-2 mt-2"><code># Encrypt password using admin's public key
+echo|set /p="&lt;password&gt;" | openssl pkeyutl -encrypt -pubin -inkey &lt;admin_public_key_file&gt;.pub -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256 -out &lt;ciphertext_file&gt;.bin
+
+# Encode ciphertext in Base64
+openssl base64 -in &lt;ciphertext_file&gt;.bin -out &lt;base64_ciphertext_file&gt;.txt
+
+# Sign the ciphertext using your private key
+openssl dgst -sha256 -sign &lt;private_key_file&gt;.pem -sigopt rsa_padding_mode:pss -sigopt rsa_pss_saltlen:max -out &lt;signature_file&gt;.bin &lt;ciphertext_file&gt;.bin
+
+# Encode signature in Base64
+openssl base64 -in &lt;signature_file&gt;.bin -out &lt;base64_signature_file&gt;.txt</code></pre>
+                    </li>
+                    <li>Submit the Base64 encoded (.txt) versions of your ciphertext and signature in the login form</li>
+                </ol>
+            </div>
+
+            <!-- Password Management -->
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-key"></i> Password & Key Management</h4>
+                <ul>
+                    <li>Store your private key securely - it's required for login and assignment submissions</li>
+                    <li>If you forgot your password, use the forgot password form</li>
+                    <li>Please ensure </li>
+                </ul>
+            </div>
+
+            <!-- Assignment Submission -->
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-file-upload"></i> Assignment Submission</h4>
+                <ol>
+                    <li>Follow the same encryption and signature process as login to verify your identity</li>
+                    <li>Encrypt your submission folder link using:
+                        <pre class="bg-light p-2 mt-2"><code>echo -n "your_folder_link" | openssl enc -aes-256-cbc -a -salt -pass pass:"your_password" -pbkdf2</code></pre>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- System Requirements -->
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-cogs"></i> System Requirements</h4>
+                <p>For decrypting reset tokens and grades, you have two options:</p>
+
+                <h5 class="mt-3">Method 1: Using Python and OpenSSL (All Operating Systems)</h5>
+                <ol>
+                    <li>Save the encrypted data to a file:
+                        <pre class="bg-light p-2 mt-2"><code>python -c "import base64; open('encrypted.bin', 'wb').write(base64.b64decode('YOUR_ENCRYPTED_DATA'))"</code></pre>
+                    </li>
+                    <li>Decrypt using OpenSSL:
+                        <pre class="bg-light p-2 mt-2"><code>openssl pkeyutl -decrypt -in encrypted.bin -inkey YOUR_PRIVATE_KEY.pem -out decrypted.txt -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256</code></pre>
+                    </li>
+                    <li>View the decrypted content:
+                        <pre class="bg-light p-2 mt-2"><code>type decrypted.txt</code> (Windows) or <code>cat decrypted.txt</code> (Mac/Linux)</pre>
+                    </li>
+                </ol>
+
+                <h5 class="mt-3">Method 2: Using Windows Built-in Tools (Windows Only)</h5>
+                <ol>
+                    <li>Save the encrypted data:
+                        <pre class="bg-light p-2 mt-2"><code>echo YOUR_ENCRYPTED_DATA > encoded.txt</code></pre>
+                    </li>
+                    <li>Convert base64 to binary:
+                        <pre class="bg-light p-2 mt-2"><code>certutil -decode encoded.txt encrypted.bin</code></pre>
+                    </li>
+                    <li>Decrypt using OpenSSL:
+                        <pre class="bg-light p-2 mt-2"><code>openssl pkeyutl -decrypt -in encrypted.bin -inkey YOUR_PRIVATE_KEY.pem -out decrypted.txt -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256</code></pre>
+                    </li>
+                    <li>View the decrypted content:
+                        <pre class="bg-light p-2 mt-2"><code>type decrypted.txt</code></pre>
+                    </li>
+                </ol>
+
+                <p class="mt-3">Replace YOUR_ENCRYPTED_DATA with the token/marks to decrypt and YOUR_PRIVATE_KEY.pem with your private key filename.</p>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="alert alert-secondary" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-envelope"></i> Need Help?</h4>
+                <p>Contact admin at: kheyu00@gmail.com</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

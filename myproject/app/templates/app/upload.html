@@ -1,0 +1,92 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<h2>Grading File Upload</h2>
+<div class="row">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Upload Grading File</h4>
+            <form id="uploadForm" class="mt-3">
+                <div class="form-group">
+                    <input type="file" class="form-control-file" id="gradingFile" name="gradingFile" required>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Upload and Process</button>
+                    <button type="button" class="btn btn-danger ms-2" id="clearGrades">Clear All Grades</button>
+                </div>
+            </form>
+
+            <!-- Progress and Status -->
+            <div id="uploadStatus" class="mt-3" style="display: none;">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="statusMessage" class="mt-2"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const fileInput = document.getElementById('gradingFile');
+        formData.append('gradingFile', fileInput.files[0]);
+        
+        // Show progress
+        document.getElementById('uploadStatus').style.display = 'block';
+        const progressBar = document.querySelector('.progress-bar');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        fetch('/handle_file_upload/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                statusMessage.textContent = 'File processed successfully!';
+                progressBar.style.width = '100%';
+                // Store the data in session storage
+                sessionStorage.setItem('gradeData', JSON.stringify(data.data));
+                // Redirect to the grades page
+                window.location.href = '/grading';
+            } else {
+                throw new Error(data.message || 'Error processing file');
+            }
+        })
+        .catch(error => {
+            statusMessage.textContent = 'Error: ' + error.message;
+            progressBar.classList.add('bg-danger');
+        });
+    });
+
+    // Add event listener for clear button
+    document.getElementById('clearGrades').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all grades? This action cannot be undone.')) {
+            fetch('/clear_grades/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Grades cleared successfully!');
+                } else {
+                    throw new Error(data.message || 'Error clearing grades');
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+    });
+</script>
+{% endblock %}
